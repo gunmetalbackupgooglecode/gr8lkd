@@ -516,7 +516,7 @@ FsftFsDispatch (
 					if( NT_SUCCESS(Status) )
 					{
 						// не помогает, блядь
-						CcPurgeCacheSection( pisl->FileObject->SectionObjectPointer, NULL, 0, 0 );
+						//CcPurgeCacheSection( pisl->FileObject->SectionObjectPointer, NULL, 0, 0 );
 					}
 
 					//KdPrint(("[+] IRP_MJ_READ: Finished (Status=0x%08x, Written:0x%08x)\n", Status, pIrp->IoStatus.Information));
