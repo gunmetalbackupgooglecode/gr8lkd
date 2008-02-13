@@ -39,7 +39,7 @@ typedef struct _DUMP_HEADER {
 /* 54 */    ULONG Unknown4;
 /* 58 */    ULONG Unknown5;
 #endif
-/* 5c */    BYTE PaeEnabled;  BYTE Reserved3[3];
+/* 5c */    UCHAR PaeEnabled;  UCHAR Reserved3[3];
 /* 60 */    PVOID KdDebuggerDataBlock;
 } DUMP_HEADER, *PDUMP_HEADER;
 

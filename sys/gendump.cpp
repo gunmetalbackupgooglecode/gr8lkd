@@ -182,71 +182,7 @@ ULONG
 CheckedOrFree(
 	)
 {
-	NTSTATUS Status;
-    HANDLE hKey;
-	UNICODE_STRING KeyName, ValueName;
-	OBJECT_ATTRIBUTES oa;
-	ULONG ReturnValue = 0;
-
-	RtlInitUnicodeString( &KeyName, L"\\Registry\\Machine\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion" );
-	InitializeObjectAttributes( &oa, &KeyName, OBJ_KERNEL_HANDLE | OBJ_CASE_INSENSITIVE, 0, 0 );
-
-    Status = ZwOpenKey (
-		&hKey,
-		KEY_QUERY_VALUE,
-		&oa );
-
-	if( !NT_SUCCESS(Status) )
-		goto _exit;
-
-	ULONG ResultLength = 0;
-    BYTE* Buffer = (BYTE*) ExAllocatePool( PagedPool, 0x100 );
-	if( Buffer == NULL )
-	{
-		ZwClose( hKey );
-		goto _exit;
-	}
-
-	RtlInitUnicodeString( &ValueName, L"CurrentType" );
-
-	Status = ZwQueryValueKey (
-		hKey,
-		&ValueName,
-		KeyValueFullInformation,
-		Buffer,
-		0x100,
-		&ResultLength );
-
-    if( !NT_SUCCESS(Status) )
-	{
-		ExFreePool( Buffer );
-		ZwClose( hKey );
-		goto _exit;
-	}
-
-	__try
-	{
-		PKEY_VALUE_FULL_INFORMATION KeyFullInfo = (PKEY_VALUE_FULL_INFORMATION) Buffer;
-		if( KeyFullInfo->Type == REG_SZ )
-		{
-			PWSTR Data = (PWSTR)( (ULONG)Buffer + KeyFullInfo->DataOffset );
-
-			if( wcsstr( Data, L"Checked" ) != NULL )
-				ReturnValue = 0xC;
-
-			if( wcsstr( Data, L"Free" ) != NULL )
-				ReturnValue = 0xF;
-		}
-	}
-	__except( EXCEPTION_EXECUTE_HANDLER )
-	{
-	}
-
-	ExFreePool( Buffer );
-    ZwClose( hKey );
-
-_exit:
-	return ReturnValue;
+	return *(ULONG*)NtBuildNumber >> 24;
 }
 
 NTSTATUS
@@ -421,7 +357,7 @@ InitializeDump(
 	// Initialize dump type & size
 	//
 
-	blocks[ DH_DUMP_TYPE ] = DUMP_TYPE_COMPLETE;
+	blocks[ DH_DUMP_TYPE ] = DUMP_TYPE_FULL;
 
 	blocks[ DH_PRODUCT_TYPE ] = *(ULONG*)0xFFDF0264; // KUSER_SHARED_DATA->NtProductType
 	blocks[ DH_SUITE_MASK ] = *(ULONG*)0xFFDF02D0; // KUSER_SHARED_DATA->SuiteMask
@@ -476,7 +412,7 @@ WriteHeaderPage(
 	{
 		ULONG BytesToCopy = MIN( PAGE_SIZE-Offset.LowPart, BufferSize );
 
-		memcpy( Buffer, (BYTE*)Dump.Header + Offset.LowPart, MIN( PAGE_SIZE, BufferSize ) );
+		memcpy( Buffer, (UCHAR*)Dump.Header + Offset.LowPart, MIN( PAGE_SIZE, BufferSize ) );
 
 		*Written = BytesToCopy;
 	}
